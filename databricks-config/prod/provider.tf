@@ -7,7 +7,7 @@ terraform {
     bucket         = "mlops-stack-aws-seek-tfstate"
     key            = "prod.terraform.tfstate"
     dynamodb_table = "mlops-stack-aws-seek-tfstate-lock"
-    region         = "us-east-1"
+    region         = "ap-southeast-2"
   }
   required_providers {
     databricks = {
