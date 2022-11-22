@@ -47,6 +47,7 @@ dbutils.widgets.text("features_transform_module", "pickup_features", label="Feat
 dbutils.widgets.text("primary_keys", "zip", label="Primary keys columns for the feature table, comma separated.")
 
 # COMMAND ----------
+
 import sys
 
 sys.path.append("../steps")
@@ -54,8 +55,8 @@ sys.path.append("../features")
 
 
 # COMMAND ----------
-# DBTITLE 1,Define input and output variables
 
+# DBTITLE 1,Define input and output variables
 env = dbutils.widgets.get("env")
 input_table_path = dbutils.widgets.get("input_table_path")
 output_table_name = dbutils.widgets.get("output_table_name")
@@ -72,11 +73,12 @@ assert output_table_name != "", "output_table_name notebook parameter must be sp
 output_database = output_table_name.split(".")[0]
 
 # COMMAND ----------
-# DBTITLE 1,Create database.
 
+# DBTITLE 1,Create database.
 spark.sql("CREATE DATABASE IF NOT EXISTS " + output_database);
 
 # COMMAND ----------
+
 # DBTITLE 1, Read input data.
 raw_data = spark.read.format("delta").load(input_table_path)
 
@@ -121,3 +123,7 @@ fs.write_table(
 )
 
 dbutils.notebook.exit(0)
+
+# COMMAND ----------
+
+

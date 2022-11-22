@@ -16,8 +16,8 @@
 
 
 # COMMAND ----------
-# DBTITLE 1, Notebook arguments
 
+# DBTITLE 1, Notebook arguments
 # List of input args needed to run this notebook as a job.
 # Provide them via DB widgets or notebook arguments.
 #
@@ -28,35 +28,35 @@ dbutils.widgets.dropdown("env", "dev", ["dev", "staging", "prod"], "Environment 
 dbutils.widgets.text("training_data_path", "/databricks-datasets/nyctaxi-with-zipcodes/subsampled", label="Path to the training data")
 
 # MLflow experiment name.
-dbutils.widgets.text("experiment_name", "/mlops-azure-cuj/mlops-azure-cuj-experiment-test", label="MLflow experiment name")
+dbutils.widgets.text("experiment_name", "mlops-ajmal-cuj-experiment-test", label="MLflow experiment name")
 
 # MLflow registered model name to use for the trained mode..
-dbutils.widgets.text("model_name", "mlops-azure-cuj-model-test", label="Model Name")
+dbutils.widgets.text("model_name", "mlops-ajmal-cuj-model-test", label="Model Name")
 
 # COMMAND ----------
-# DBTITLE 1,Define input and output variables
 
+# DBTITLE 1,Define input and output variables
 env = dbutils.widgets.get("env")
 input_table_path = dbutils.widgets.get("training_data_path")
 experiment_name = dbutils.widgets.get("experiment_name")
 model_name = dbutils.widgets.get("model_name")
 
 # COMMAND ----------
+
 # DBTITLE 1, Set experiment
 import mlflow
 
-mlflow.set_experiment(experiment_name)
+mlflow.set_experiment('/Shared/' + experiment_name)
 
 # COMMAND ----------
-# DBTITLE 1, Load raw data
 
+# DBTITLE 1, Load raw data
 raw_data = spark.read.format("delta").load(input_table_path)
 display(raw_data)
 
 # COMMAND ----------
 
 # DBTITLE 1, Helper functions
-
 from pyspark.sql import *
 from pyspark.sql.functions import current_timestamp, to_timestamp, lit
 from pyspark.sql.types import IntegerType, TimestampType
@@ -108,19 +108,17 @@ def get_latest_model_version(model_name):
 # COMMAND ----------
 
 # DBTITLE 1, Read taxi data for training
-
 taxi_data = rounded_taxi_data(raw_data)
 display(taxi_data)
 
 # COMMAND ----------
 
 # DBTITLE 1, Create FeatureLookups
-
 from databricks.feature_store import FeatureLookup
 import mlflow
 
-pickup_features_table = "feature_store_taxi_example.trip_pickup_features"
-dropoff_features_table = "feature_store_taxi_example.trip_dropoff_features"
+pickup_features_table = "feature_store_taxi_example_ajmal.trip_pickup_features"
+dropoff_features_table = "feature_store_taxi_example_ajmal.trip_dropoff_features"
 
 pickup_feature_lookups = [
     FeatureLookup(
@@ -131,14 +129,14 @@ pickup_feature_lookups = [
     ),
 ]
 
-dropoff_feature_lookups = [
-    FeatureLookup(
-        table_name = dropoff_features_table,
-        feature_names = ["count_trips_window_30m_dropoff_zip", "dropoff_is_weekend"],
-        lookup_key = ["dropoff_zip"],
-        timestamp_lookup_key = ["rounded_dropoff_datetime"]
-    ),
-]
+# dropoff_feature_lookups = [
+#     FeatureLookup(
+#         table_name = dropoff_features_table,
+#         feature_names = ["count_trips_window_30m_dropoff_zip", "dropoff_is_weekend"],
+#         lookup_key = ["dropoff_zip"],
+#         timestamp_lookup_key = ["rounded_dropoff_datetime"]
+#     ),
+# ]
 
 # COMMAND ----------
 
@@ -160,7 +158,7 @@ fs = feature_store.FeatureStoreClient()
 # Create the training set that includes the raw input data merged with corresponding features from both feature tables
 training_set = fs.create_training_set(
     taxi_data,
-    feature_lookups = pickup_feature_lookups + dropoff_feature_lookups,
+    feature_lookups = pickup_feature_lookups, # + dropoff_feature_lookups,
     label = "fare_amount",
     exclude_columns = exclude_columns
 )
@@ -179,13 +177,37 @@ display(training_df)
 # MAGIC Train a LightGBM model on the data returned by `TrainingSet.to_df`, then log the model with `FeatureStoreClient.log_model`. The model will be packaged with feature metadata.
 
 # COMMAND ----------
-# DBTITLE 1, Train model
 
+# DBTITLE 1,Define the search space for LightGBM
+from hyperopt import fmin, tpe, hp, SparkTrials, Trials, STATUS_OK
+from hyperopt.pyll import scope
+from hyperopt.pyll.stochastic import sample
+import numpy as np
+
+search_space = {
+  'class_weight': hp.choice('class_weight', [None, 'balanced']),
+  'num_leaves': scope.int(hp.quniform('num_leaves', 30, 150, 1)),
+  'learning_rate': hp.loguniform('learning_rate', np.log(0.01), np.log(0.2)),
+  'subsample_for_bin': scope.int(hp.quniform('subsample_for_bin', 20000, 300000, 20000)),
+  'feature_fraction': hp.uniform('feature_fraction', 0.5, 1),
+  'bagging_fraction': hp.uniform('bagging_fraction', 0.5, 1),
+  'min_data_in_leaf': scope.int(hp.qloguniform('min_data_in_leaf', 0, 6, 1)),
+  'lambda_l1': scope.int(hp.choice('lambda_l1', [0, hp.loguniform('lambda_l1_positive', -16, 2)])),
+  'lambda_l2': scope.int(hp.choice('lambda_l2', [0, hp.loguniform('lambda_l2_positive', -16, 2)])),
+  'verbose': -1,
+  'subsample': None,
+  'reg_alpha': None,
+  'reg_lambda': None,
+  'min_sum_hessian_in_leaf': None,
+  'min_child_samples': None,
+  'colsample_bytree': None,
+  'min_child_weight': scope.int(hp.loguniform('min_child_weight', -16, 5))
+}
+
+# COMMAND ----------
+
+# DBTITLE 1,Create training and testing data sets
 from sklearn.model_selection import train_test_split
-from mlflow.tracking import MlflowClient
-import lightgbm as lgb
-import mlflow.lightgbm
-from mlflow.models.signature import infer_signature
 
 features_and_label = training_df.columns
 
@@ -198,20 +220,67 @@ X_test = test.drop(["fare_amount"], axis=1)
 y_train = train.fare_amount
 y_test = test.fare_amount
 
-mlflow.lightgbm.autolog()
-train_lgb_dataset = lgb.Dataset(X_train, label=y_train.values)
-test_lgb_dataset = lgb.Dataset(X_test, label=y_test.values)
+# COMMAND ----------
 
-param = {"num_leaves": 32, "objective": "regression", "metric": "rmse"}
-num_rounds = 100
+# DBTITLE 1,Define the objective function for HyperOpt
+from mlflow.models.signature import infer_signature
+from sklearn.metrics import r2_score
+import lightgbm as lgb
+import mlflow.lightgbm
 
-# Train a lightGBM model
-model = lgb.train(
-    param, train_lgb_dataset, num_rounds
+
+def objective_function(trial_params):
+  with mlflow.start_run(nested=True):
+    mlflow.lightgbm.autolog()
+    
+    # Redefine our pipeline with the new params from the search algo    
+    train_lgb_dataset = lgb.Dataset(X_train, label=y_train.values)
+    test_lgb_dataset = lgb.Dataset(X_test, label=y_test.values)
+    
+    # Fit a model with the trial's parameters
+    num_rounds = 100
+    model = lgb.train(trial_params, train_lgb_dataset, num_rounds)
+    
+    # Fit, predict, score
+    predictions_valid = model.predict(X_test)
+    r2_score_calc = r2_score(y_test.values, predictions_valid)
+    
+    # Log :)
+    mlflow.log_metric('r2_score', r2_score_calc)
+
+    # Set the loss to r2_score_calc so fmin maximizes the auc_score
+    return {'status': STATUS_OK, 'loss': r2_score_calc}
+
+# COMMAND ----------
+
+# DBTITLE 1,Identify best parameters
+# Greater parallelism will lead to speedups, but a less optimal hyperparameter sweep. 
+spark_trials = SparkTrials(parallelism=10)
+
+# Run fmin within an MLflow run context so that each hyperparameter configuration is logged as a child run of a parent
+best_params = fmin(
+  fn=objective_function, 
+  space=search_space, 
+  algo=tpe.suggest, 
+  max_evals=5,
+  trials=spark_trials, 
+  return_argmin=False
 )
 
 # COMMAND ----------
+
+# Retrain the model with the best parameters
+train_lgb_dataset = lgb.Dataset(X_train, label=y_train.values)
+test_lgb_dataset = lgb.Dataset(X_test, label=y_test.values)
+
+# Fit a model with the trial's parameters
+model = lgb.train(best_params, train_lgb_dataset, 100)
+
+# COMMAND ----------
+
 # DBTITLE 1, Log model and return output.
+from mlflow.tracking import MlflowClient
+from mlflow.models.signature import infer_signature
 
 # Log the trained model with MLflow and package it with feature lookup information.
 fs.log_model(
@@ -232,3 +301,7 @@ model_registry_url = "https://{workspace_url}/#mlflow/models/{model_name}/versio
 model_uri = f"models:/{model_name}/{model_version}"
 dbutils.jobs.taskValues.set("model_uri", model_uri)
 dbutils.notebook.exit(model_uri)
+
+# COMMAND ----------
+
+
