@@ -31,7 +31,7 @@ resource "databricks_job" "write_feature_table_job" {
 
     new_cluster {
       num_workers   = 3
-      spark_version = "11.0.x-cpu-ml-scala2.12"
+      spark_version = "11.3.x-cpu-ml-scala2.12"
       node_type_id  = "i3.xlarge"
       custom_tags   = { "clusterSource" = "mlops-stack/0.0" }
     }
@@ -58,7 +58,7 @@ resource "databricks_job" "write_feature_table_job" {
 
     new_cluster {
       num_workers   = 3
-      spark_version = "11.0.x-cpu-ml-scala2.12"
+      spark_version = "11.3.x-cpu-ml-scala2.12"
       node_type_id  = "i3.xlarge"
       custom_tags   = { "clusterSource" = "mlops-stack/0.0" }
     }
@@ -71,7 +71,7 @@ resource "databricks_job" "write_feature_table_job" {
   }
 
   schedule {
-    quartz_cron_expression = "0 0 9 * * ?" # daily at 9am
+    quartz_cron_expression = "0 0 15 * * ?" # daily at 15pm
     timezone_id            = "UTC"
   }
 

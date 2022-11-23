@@ -9,6 +9,7 @@ env:
   DATABRICKS_HOST: https://e2-demo-tokyo.cloud.databricks.com
   NODE_TYPE_ID: i3.xlarge
   DATABRICKS_TOKEN: ${{secrets.STAGING_WORKSPACE_TOKEN}}
+  POOL_ID: 1123-142858-width2-pool-pn58s104
 
 concurrency: mlops-stack-aws-seek-feature-training-integration-test-staging
 
@@ -64,8 +65,10 @@ jobs:
                   }
                 },
                 "new_cluster": {
-                  "spark_version": "11.0.x-cpu-ml-scala2.12",
-                  "node_type_id": "${{ env.NODE_TYPE_ID }}",
+                  "spark_version": "11.3.x-cpu-ml-scala2.12",
+                  "instance_pool_id": "${{ env.POOL_ID }}",
+                  "driver_instance_pool_id": "${{ env.POOL_ID }}",
+                  "runtime_engine": "STANDARD",
                   "num_workers": 0,
                   "spark_conf": {
                     "spark.databricks.cluster.profile": "singleNode",
@@ -92,8 +95,10 @@ jobs:
                   }
                 },
                 "new_cluster": {
-                  "spark_version": "11.0.x-cpu-ml-scala2.12",
-                  "node_type_id": "${{ env.NODE_TYPE_ID }}",
+                  "spark_version": "11.3.x-cpu-ml-scala2.12",
+                  "instance_pool_id": "${{ env.POOL_ID }}",
+                  "driver_instance_pool_id": "${{ env.POOL_ID }}",
+                  "runtime_engine": "STANDARD",
                   "num_workers": 0,
                   "spark_conf": {
                     "spark.databricks.cluster.profile": "singleNode",
@@ -126,8 +131,10 @@ jobs:
                   }
                 },
                 "new_cluster": {
-                  "spark_version": "11.0.x-cpu-ml-scala2.12",
-                  "node_type_id": "${{ env.NODE_TYPE_ID }}",
+                  "spark_version": "11.3.x-cpu-ml-scala2.12",
+                  "instance_pool_id": "${{ env.POOL_ID }}",
+                  "driver_instance_pool_id": "${{ env.POOL_ID }}",
+                  "runtime_engine": "STANDARD",
                   "num_workers": 0,
                   "spark_conf": {
                     "spark.databricks.cluster.profile": "singleNode",
