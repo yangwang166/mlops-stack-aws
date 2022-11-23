@@ -170,6 +170,7 @@ jobs:
           databricks runs submit --json-file test.json --wait > tmp-output.json
           # We want to extract the run id as it's useful to show in the Github UI (as a comment).
           head -3  tmp-output.json  | jq '.run_id'  > run-id.json
+          cat run-id.json
           databricks runs get --run-id "$(cat run-id.json)" | jq -r '.run_page_url' > run-page-url.json
           echo "run-url=$(cat run-page-url.json)" >> "$GITHUB_OUTPUT"
       - name: Create Comment with Training Model Output
