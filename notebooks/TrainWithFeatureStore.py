@@ -146,6 +146,8 @@ from databricks import feature_store
 # End any existing runs (in the case this notebook is being run for a second time)
 mlflow.end_run()
 
+mlflow.lightgbm.autolog()
+
 # Start an mlflow run, which is needed for the feature store to log the model
 mlflow.start_run()
 
@@ -282,14 +284,9 @@ model = lgb.train(best_params, train_lgb_dataset, 100)
 from mlflow.tracking import MlflowClient
 from mlflow.models.signature import infer_signature
 
-# Log the trained model with MLflow and package it with feature lookup information.
-fs.log_model(
-    model,
-    artifact_path="model_packaged",
-    flavor=mlflow.lightgbm,
-    training_set=training_set,
-    registered_model_name=model_name
-)
+run = mlflow.active_run()
+model_uri = f"runs:/{ run.info.run_id }/model"
+registered_model_version = mlflow.register_model(model_uri, model_name)
 
 # Build out the MLflow model registry URL for this model version.
 workspace_url = spark.conf.get("spark.databricks.workspaceUrl")
