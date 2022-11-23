@@ -238,7 +238,7 @@ def objective_function(trial_params):
     test_lgb_dataset = lgb.Dataset(X_test, label=y_test.values)
     
     # Fit a model with the trial's parameters
-    num_rounds = 100
+    num_rounds = 50
     model = lgb.train(trial_params, train_lgb_dataset, num_rounds)
     
     # Fit, predict, score
@@ -255,14 +255,14 @@ def objective_function(trial_params):
 
 # DBTITLE 1,Identify best parameters
 # Greater parallelism will lead to speedups, but a less optimal hyperparameter sweep. 
-spark_trials = SparkTrials(parallelism=10)
+spark_trials = SparkTrials(parallelism=2)
 
 # Run fmin within an MLflow run context so that each hyperparameter configuration is logged as a child run of a parent
 best_params = fmin(
   fn=objective_function, 
   space=search_space, 
   algo=tpe.suggest, 
-  max_evals=5,
+  max_evals=4,
   trials=spark_trials, 
   return_argmin=False
 )

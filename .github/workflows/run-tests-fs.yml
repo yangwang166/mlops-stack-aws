@@ -9,7 +9,7 @@ env:
   DATABRICKS_HOST: https://e2-demo-tokyo.cloud.databricks.com
   NODE_TYPE_ID: i3.xlarge
   DATABRICKS_TOKEN: ${{secrets.STAGING_WORKSPACE_TOKEN}}
-  POOL_ID: 1123-142858-width2-pool-pn58s104
+  POOL_ID: 1123-151610-opus3-pool-kohxqqz8
 
 concurrency: mlops-stack-aws-seek-feature-training-integration-test-staging
 
