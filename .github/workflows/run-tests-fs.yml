@@ -147,7 +147,7 @@ jobs:
             },
             "access_control_list": [
               {
-                "group_name": "users",
+                "group_name": "mlopsusers",
                 "permission_level": "CAN_VIEW"
               }
             ]
