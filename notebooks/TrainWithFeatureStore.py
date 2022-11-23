@@ -117,8 +117,8 @@ display(taxi_data)
 from databricks.feature_store import FeatureLookup
 import mlflow
 
-pickup_features_table = "feature_store_taxi_example_ajmal.trip_pickup_features"
-dropoff_features_table = "feature_store_taxi_example_ajmal.trip_dropoff_features"
+pickup_features_table = "mlops_stack_yang_seek.trip_pickup_features_" + env
+dropoff_features_table = "mlops_stack_yang_seek.trip_dropoff_features_" + env
 
 pickup_feature_lookups = [
     FeatureLookup(
@@ -129,14 +129,14 @@ pickup_feature_lookups = [
     ),
 ]
 
-# dropoff_feature_lookups = [
-#     FeatureLookup(
-#         table_name = dropoff_features_table,
-#         feature_names = ["count_trips_window_30m_dropoff_zip", "dropoff_is_weekend"],
-#         lookup_key = ["dropoff_zip"],
-#         timestamp_lookup_key = ["rounded_dropoff_datetime"]
-#     ),
-# ]
+dropoff_feature_lookups = [
+    FeatureLookup(
+        table_name = dropoff_features_table,
+        feature_names = ["count_trips_window_30m_dropoff_zip", "dropoff_is_weekend"],
+        lookup_key = ["dropoff_zip"],
+        timestamp_lookup_key = ["rounded_dropoff_datetime"]
+    ),
+]
 
 # COMMAND ----------
 
@@ -158,7 +158,7 @@ fs = feature_store.FeatureStoreClient()
 # Create the training set that includes the raw input data merged with corresponding features from both feature tables
 training_set = fs.create_training_set(
     taxi_data,
-    feature_lookups = pickup_feature_lookups, # + dropoff_feature_lookups,
+    feature_lookups = pickup_feature_lookups + dropoff_feature_lookups,
     label = "fare_amount",
     exclude_columns = exclude_columns
 )
