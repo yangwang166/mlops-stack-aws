@@ -22,7 +22,7 @@
 # Provide them via DB widgets or notebook arguments.
 #
 # Name of the current environment.
-dbutils.widgets.dropdown("env", "dev", ["dev", "staging", "prod"], "Environment Name")
+dbutils.widgets.dropdown("env", "dev", ["dev", "staging", "prod", "test"], "Environment Name")
 
 # Path to the Hive-registered Delta table containing the training data.
 dbutils.widgets.text("training_data_path", "/databricks-datasets/nyctaxi-with-zipcodes/subsampled", label="Path to the training data")
@@ -46,7 +46,7 @@ model_name = dbutils.widgets.get("model_name")
 # DBTITLE 1, Set experiment
 import mlflow
 
-mlflow.set_experiment('/Shared/' + experiment_name)
+mlflow.set_experiment(experiment_name)
 
 # COMMAND ----------
 
@@ -117,8 +117,8 @@ display(taxi_data)
 from databricks.feature_store import FeatureLookup
 import mlflow
 
-pickup_features_table = "feature_store_taxi_example_ajmal.trip_pickup_features"
-dropoff_features_table = "feature_store_taxi_example_ajmal.trip_dropoff_features"
+pickup_features_table = "mlops_stack_yang_seek.trip_pickup_features_" + env
+dropoff_features_table = "mlops_stack_yang_seek.trip_dropoff_features_" + env
 
 pickup_feature_lookups = [
     FeatureLookup(
@@ -129,14 +129,14 @@ pickup_feature_lookups = [
     ),
 ]
 
-# dropoff_feature_lookups = [
-#     FeatureLookup(
-#         table_name = dropoff_features_table,
-#         feature_names = ["count_trips_window_30m_dropoff_zip", "dropoff_is_weekend"],
-#         lookup_key = ["dropoff_zip"],
-#         timestamp_lookup_key = ["rounded_dropoff_datetime"]
-#     ),
-# ]
+dropoff_feature_lookups = [
+    FeatureLookup(
+        table_name = dropoff_features_table,
+        feature_names = ["count_trips_window_30m_dropoff_zip", "dropoff_is_weekend"],
+        lookup_key = ["dropoff_zip"],
+        timestamp_lookup_key = ["rounded_dropoff_datetime"]
+    ),
+]
 
 # COMMAND ----------
 
@@ -158,7 +158,7 @@ fs = feature_store.FeatureStoreClient()
 # Create the training set that includes the raw input data merged with corresponding features from both feature tables
 training_set = fs.create_training_set(
     taxi_data,
-    feature_lookups = pickup_feature_lookups, # + dropoff_feature_lookups,
+    feature_lookups = pickup_feature_lookups + dropoff_feature_lookups,
     label = "fare_amount",
     exclude_columns = exclude_columns
 )
