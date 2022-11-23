@@ -23,7 +23,7 @@ resource "databricks_job" "write_feature_table_job" {
         input_start_date          = ""
         input_end_date            = ""
         timestamp_column          = "tpep_pickup_datetime"
-        output_table_name         = "feature_store_taxi_example.trip_pickup_features"
+        output_table_name         = "mlops_stack_yang_seek.trip_pickup_features_prod"
         features_transform_module = "pickup_features"
         primary_keys              = "zip"
       }
@@ -50,7 +50,7 @@ resource "databricks_job" "write_feature_table_job" {
         input_start_date          = ""
         input_end_date            = ""
         timestamp_column          = "tpep_dropoff_datetime"
-        output_table_name         = "feature_store_taxi_example.trip_dropoff_features"
+        output_table_name         = "mlops_stack_yang_seek.trip_dropoff_features_prod"
         features_transform_module = "dropoff_features"
         primary_keys              = "zip"
       }

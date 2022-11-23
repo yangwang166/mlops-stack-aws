@@ -46,7 +46,7 @@ model_name = dbutils.widgets.get("model_name")
 # DBTITLE 1, Set experiment
 import mlflow
 
-mlflow.set_experiment('/Shared/' + experiment_name)
+mlflow.set_experiment(experiment_name)
 
 # COMMAND ----------
 
