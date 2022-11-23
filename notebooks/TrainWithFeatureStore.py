@@ -22,7 +22,7 @@
 # Provide them via DB widgets or notebook arguments.
 #
 # Name of the current environment.
-dbutils.widgets.dropdown("env", "dev", ["dev", "staging", "prod"], "Environment Name")
+dbutils.widgets.dropdown("env", "dev", ["dev", "staging", "prod", "test"], "Environment Name")
 
 # Path to the Hive-registered Delta table containing the training data.
 dbutils.widgets.text("training_data_path", "/databricks-datasets/nyctaxi-with-zipcodes/subsampled", label="Path to the training data")
