@@ -68,7 +68,6 @@ jobs:
                   "spark_version": "11.3.x-cpu-ml-scala2.12",
                   "instance_pool_id": "${{ env.POOL_ID }}",
                   "driver_instance_pool_id": "${{ env.POOL_ID }}",
-                  "runtime_engine": "STANDARD",
                   "num_workers": 0,
                   "spark_conf": {
                     "spark.databricks.cluster.profile": "singleNode",
@@ -98,7 +97,6 @@ jobs:
                   "spark_version": "11.3.x-cpu-ml-scala2.12",
                   "instance_pool_id": "${{ env.POOL_ID }}",
                   "driver_instance_pool_id": "${{ env.POOL_ID }}",
-                  "runtime_engine": "STANDARD",
                   "num_workers": 0,
                   "spark_conf": {
                     "spark.databricks.cluster.profile": "singleNode",
@@ -134,7 +132,6 @@ jobs:
                   "spark_version": "11.3.x-cpu-ml-scala2.12",
                   "instance_pool_id": "${{ env.POOL_ID }}",
                   "driver_instance_pool_id": "${{ env.POOL_ID }}",
-                  "runtime_engine": "STANDARD",
                   "num_workers": 0,
                   "spark_conf": {
                     "spark.databricks.cluster.profile": "singleNode",
