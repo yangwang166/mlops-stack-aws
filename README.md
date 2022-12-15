@@ -1,4 +1,4 @@
-# mlops-stack-aws-seek
+# mlops-stack-aws
 
 This directory contains an ML project based on the default
 [Databricks MLOps Stack](https://github.com/databricks/mlops-stack),
