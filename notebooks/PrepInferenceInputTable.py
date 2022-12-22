@@ -146,8 +146,6 @@ from databricks import feature_store
 # End any existing runs (in the case this notebook is being run for a second time)
 mlflow.end_run()
 
-mlflow.lightgbm.autolog()
-
 # Start an mlflow run, which is needed for the feature store to log the model
 mlflow.start_run()
 
@@ -172,6 +170,19 @@ training_df = training_set.load_df()
 
 # Display the training dataframe, and note that it contains both the raw input data and the features from the Feature Store, like `dropoff_is_weekend`
 display(training_df)
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+# DBTITLE 1,Prep Inference Input Table
+training_df.drop("fare_amount").write.format("delta").mode("overwrite").saveAsTable("jetstar_feature_store_taxi_example.inference_data")
+
+# COMMAND ----------
+
+
 
 # COMMAND ----------
 
@@ -264,7 +275,7 @@ best_params = fmin(
   fn=objective_function, 
   space=search_space, 
   algo=tpe.suggest, 
-  max_evals=1,
+  max_evals=2,
   trials=spark_trials, 
   return_argmin=False
 )
@@ -280,48 +291,18 @@ model = lgb.train(best_params, train_lgb_dataset, 100)
 
 # COMMAND ----------
 
-run = mlflow.active_run()
-
-# COMMAND ----------
-
-model_uri = f"runs:/{ run.info.run_id }/model"
-registered_model_version = mlflow.register_model(model_uri, model_name)
-
-# COMMAND ----------
-
+# DBTITLE 1, Log model and return output.
 from mlflow.tracking import MlflowClient
 from mlflow.models.signature import infer_signature
 
-model_version = get_latest_model_version(model_name)
-
-# COMMAND ----------
-
-# Build out the MLflow model registry URL for this model version.
-workspace_url = spark.conf.get("spark.databricks.workspaceUrl")
-model_version = get_latest_model_version(model_name)
-model_registry_url = "https://{workspace_url}/#mlflow/models/{model_name}/versions/{model_version}"\
-    .format(workspace_url=workspace_url, model_name=model_name, model_version=model_version)
-
-# The returned model URI is needed by the model deployment notebook.
-model_uri = f"models:/{model_name}/{model_version}"
-
-# COMMAND ----------
-
-model_uri
-
-# COMMAND ----------
-
-# DBTITLE 1, Log model and return output.
-
-
-# # Log the trained model with MLflow and package it with feature lookup information.
-# fs.log_model(
-#     model,
-#     artifact_path="model_packaged",
-#     flavor=mlflow.lightgbm,
-#     training_set=training_set,
-#     registered_model_name=model_name
-# )
+# Log the trained model with MLflow and package it with feature lookup information.
+fs.log_model(
+    model,
+    artifact_path="model_packaged",
+    flavor=mlflow.lightgbm,
+    training_set=training_set,
+    registered_model_name=model_name
+)
 
 # Build out the MLflow model registry URL for this model version.
 workspace_url = spark.conf.get("spark.databricks.workspaceUrl")
